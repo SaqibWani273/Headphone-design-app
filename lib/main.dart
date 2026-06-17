@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:headphone_app/product_Details_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,24 +52,28 @@ class _ProductGridScreenState extends State<ProductGridScreen>
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> products = [
       {
+        'id': '1',
         'image': 'assets/images/headphone_pink.png',
         'title': 'QuietComfort 35\nwireless\nheadphones II',
         'price': '\$449.99',
         'isAvailable': true,
       },
       {
+        'id': '2',
         'image': 'assets/images/headphone_black2.png',
         'title': 'SoundLink®\naroundear wireless\nheadphones',
         'price': '\$269.99',
         'isAvailable': true,
       },
       {
+        'id': '3',
         'image': 'assets/images/black_blue_headphone.png',
         'title': 'Bose on-ear\nwireless\nheadphones',
         'price': '\$209.99',
         'isAvailable': true,
       },
       {
+        'id': '4',
         'image': 'assets/images/headphone3.png',
         'title': 'Bose Noise\nCancelling\nHeadphones 700',
         'price': 'Coming Soon',
@@ -172,7 +177,61 @@ class _ProductGridScreenState extends State<ProductGridScreen>
                   ),
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    return ProductCard(product: product, index: index + 1);
+                    return Builder(
+                      builder: (itemContext) {
+                        return InkWell(
+                          onTap: () {
+                            // Find this card's center in global screen coords so
+                            // the details screen can grow its circle from here.
+                            final box =
+                                itemContext.findRenderObject() as RenderBox;
+                            final cardCenter = box.localToGlobal(
+                              box.size.center(Offset.zero),
+                            );
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                transitionDuration: const Duration(
+                                  milliseconds: 900,
+                                ),
+                                reverseTransitionDuration: const Duration(
+                                  milliseconds: 750,
+                                ),
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        ProductDetailsScreen(
+                                          product: product,
+                                          // location of this card on screen
+                                          offset: cardCenter,
+                                        ),
+                                // Fade the incoming details screen in. The Hero
+                                // flies via the overlay so it stays opaque; only
+                                // the page content + growing circle fade in.
+                                transitionsBuilder:
+                                    (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      return FadeTransition(
+                                        opacity: CurvedAnimation(
+                                          parent: animation,
+                                          curve: const Interval(0.0, 0.6),
+                                        ),
+                                        child: child,
+                                      );
+                                    },
+                              ),
+                            );
+                          },
+                          child: ProductCard(
+                            product: product,
+                            index: index + 1,
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -212,15 +271,24 @@ class _ProductCardState extends State<ProductCard>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(widget.index % 2 == 0 ? 1.5 : -1.5, 0.0),
+    _slideAnimation =
+        Tween<Offset>(
+          begin: Offset(widget.index % 2 == 0 ? 1.5 : -1.5, 0.0),
 
-      end: const Offset(0, 0),
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.fastOutSlowIn));
-    _rotateAnimation = Tween<double>(
-      begin: widget.index % 2 == 0 ? 0.1 : -0.1,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn));
+          end: const Offset(0, 0),
+        ).animate(
+          CurvedAnimation(
+            parent: _slideController,
+            curve: Curves.fastOutSlowIn,
+          ),
+        );
+    _rotateAnimation =
+        Tween<double>(
+          begin: widget.index % 2 == 0 ? 0.1 : -0.1,
+          end: 0.0,
+        ).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn),
+        );
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         _controller.forward();
@@ -244,12 +312,16 @@ class _ProductCardState extends State<ProductCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product Image Wrapper
+              // Product Image Wrapper (only the image is the Hero, so just
+              // the headphone flies + scales into the details screen).
               Expanded(
                 child: Center(
-                  child: Image.asset(
-                    widget.product['image'],
-                    fit: BoxFit.contain,
+                  child: Hero(
+                    tag: widget.product['id'],
+                    child: Image.asset(
+                      widget.product['image'],
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
