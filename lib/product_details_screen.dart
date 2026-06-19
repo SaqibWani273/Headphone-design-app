@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -40,23 +42,27 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen>
 
   late final Size _screenSize = MediaQuery.of(context).size;
   late final double _maxDiameter = _screenSize.longestSide * 2.6;
+  bool isSlideForwarded = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    _circleReveal.addStatusListener(_onRevealStatusChanged);
+    _circleReveal.addListener(() {
+      log('circle reveal: ${_circleReveal.value}');
+      log('isSlideForwarded $isSlideForwarded');
+      if(_circleReveal.value > 0.7 && !isSlideForwarded) {
+        _slideController.forward();
+        isSlideForwarded = true;
+      }
+    });
   }
 
-  void _onRevealStatusChanged(AnimationStatus status) {
-    if (status != AnimationStatus.completed) return;
 
-    if (mounted) _slideController.forward();
-  }
 
   @override
   void dispose() {
-    _circleReveal.removeStatusListener(_onRevealStatusChanged);
+   
     _slideController.dispose();
     super.dispose();
   }
